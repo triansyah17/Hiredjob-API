@@ -27,15 +27,14 @@ app.use(require("./src/routes/experience.route"));
 app.use(require("./src/routes/project.route"));
 
 app.all("*", (req, res, next) => {
-  next(new createError.NotFound());
+  next(createError());
 });
-app.use((err, req, res, next) => {
-  const messageError = err.message || "internal server error";
-  const statusCode = err.status || 500;
 
-  res.status(statusCode).json({
-    message: messageError,
-  });
+app.use((err, req, res, next) => {
+  const statusCode = err.status;
+  if (res.status(statusCode)) {
+    res.json(createError(statusCode, err));
+  }
   next();
 });
 
