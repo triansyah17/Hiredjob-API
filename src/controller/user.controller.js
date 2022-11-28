@@ -5,6 +5,8 @@ const projectModel = require("../models/project.model");
 const experienceModel = require("../models/experience.model");
 const deleteFile = require("../utils/deleteFile");
 const { success, failed } = require("../utils/createResponse");
+const gdriveUtil = require("../utils/googleDrive");
+// const deleteGdrive = require("../utils/deleteGoogleDrive");
 
 module.exports = {
   list: async (req, res) => {
@@ -115,17 +117,19 @@ module.exports = {
         return;
       }
       // jika ada upload photo
-      const PORT = process.env.PORT || 5000;
-      const DB_HOST = process.env.DB_HOST || "localhost";
-      let photo = req.files.photo[0].filename;
+      let { photo } = user.rows[0];
       if (req.files) {
         if (req.files.photo) {
-          await userModel.changePhoto(
-            user.rows[0].id,
-            (photo = `http://${DB_HOST}:${PORT}/img/${photo}`)
-          );
+          // menghapus photo lama
+          if (user.rows[0].photo) {
+            await gdriveUtil.deleteGoogleDrive(user.rows[0].photo);
+          }
+          // mendapatkan name photo baru
+          photo = await gdriveUtil.uploadGoogleDrive(req.files.photo[0]);
+          deleteFile(req.files.photo[0].path);
         }
       }
+      await userModel.changePhoto(user.rows[0].id, photo);
 
       success(res, {
         code: 200,
